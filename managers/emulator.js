@@ -2,7 +2,7 @@ import listener from "./listener.js";
 import data from './data.js'
 import event from "./event.js";
 
-// Вспомогательная функция process, на 4 секунды сдвигает выполнение следующе операции.
+// Вспомогательная функция process, на 1 секунду сдвигает выполнение следующе операции.
 // Используется только для иммитации процесса работы оборудования.
 // Из-за данной функции немного посыпалась очередь задач и код стал более громоздкий.
 
@@ -36,6 +36,9 @@ function emulator() {
             }
         },
         BankCardPurchase: function (amount, cb, display_cb) {
+            // Сохраняем внешний контекст this
+            const self = this
+
             const messages = {
                 init: `Сумма к оплате: ${amount}₽.
                 Приложите карту.`,
@@ -48,23 +51,27 @@ function emulator() {
                 cancel: "Принудительная отмена."
             }
 
-            // Сохраняем внешний контекст this внутри метода(не лучшая практика), чтобы работать с BankCardCancel
-            // Альтернатива: использовать стрелочную функцию
-            // или каррировать функцию и дать внешний контекст первым параметром в его области видимости
-            const self = this
-
-            // Переменная, для хранения состояния, отмены в процессе банкинга
-            let isCancel = false
-
-            // Функция, которая отлавливает отмену в процессе банкинга и меняет состояние переменной isCancel
-            function cancelInProcessing(e) {
-                if (event.isClickedCancel(e)) {
-                    return isCancel = true
-                }
-            }
+            // Функция с замыканием для управления состоянием отмены операции в процессе
+            const cancelInProcessing = (function() {
+                // Переменная isCancel находится в области видимости замыкания
+                let isCancel = false;
+                // Возвращаемая функция управляет состоянием isCancel
+                return function(e) {
+                    if (e) {
+                        // Если передан аргумент, проверяем условие и обновляем isCancel
+                        if (event.isCancelCard(e)) {
+                            isCancel = true;
+                        }
+                    } else {
+                        // Если аргумент не передан, возвращаем текущее значение isCancel
+                        return isCancel;
+                    }
+                };
+            })();
+            
             //Функция отмены банкинга до процесса
             function cancelBeforeProcessing(e) {
-                if (event.isClickedCancel(e)) {
+                if (event.isCancelCard(e)) {
                     return self.BankCardCancel(),
                         cancelBankCard()
                 }
@@ -73,13 +80,12 @@ function emulator() {
             function cancelBankCard() {
                 return display_cb(messages.cancel),
                     process(function () {
-                        cb(false)
+                        return cb(false)
                     })
             }
             handler = function (e) {
-                // Если нажаты A или D
-                if (event.isChosenA(e) || event.isChosenD(e)) {
-                    //Сразу удаляем лисенер отмены операции до процессинга
+                if (event.isSuccesCard(e) || event.isFailCard(e)) {
+                    //Удаляем лисенер отмены операции до процессинга
                     listener('click').remove(cancelBeforeProcessing)
                     //Удаляем лисенер на нажатие клавиш успешная/неуспешная операция
                     listener("keydown").remove(handler)
@@ -87,26 +93,26 @@ function emulator() {
                     listener("click").set(cancelInProcessing)
                     // Выводим на экран процесс обработки карты1
                     display_cb(messages.processing1)
-                    process(function () {
+                    return process(function () {
                         // Выводим на экран процесс обработки карты2
                         display_cb(messages.processing2)
-                        process(function () {
+                        return process(function () {
                             // Выводим на экран процесс обработки карты3
                             display_cb(messages.processing3)
                             // В зависимости от нажатой кнопки - успешная/неуспешная транзакция
-                            process(function () {
-                                if (event.isChosenA(e)) {
-                                    return display_cb(messages.success),
-                                        process(function () {
-                                            //Проверяем была ли нажата кнопка отмены, если да, то отменяем транзакцию
-                                            return isCancel ? cancelBankCard() : cb(true)
-                                        });
+                            return process(function () {
+                                if (event.isSuccesCard(e)) {
+                                    display_cb(messages.success)
+                                    return process(function () {
+                                        //Проверяем была ли нажата кнопка отмены, если да, то отменяем транзакцию
+                                        return cancelInProcessing() ? cancelBankCard() : cb(true)
+                                    });
                                 }
-                                if (event.isChosenD(e)) {
-                                    return display_cb(messages.fail),
-                                        process(function () {
-                                            return isCancel ? cancelBankCard() : cb(false)
-                                        });
+                                if (event.isFailCard(e)) {
+                                    display_cb(messages.fail)
+                                    return process(function () {
+                                        return cancelInProcessing() ? cancelBankCard() : cb(false)
+                                    });
                                 }
                             })
                         })
