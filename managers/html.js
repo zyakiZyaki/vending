@@ -44,7 +44,7 @@ function html() {
                 inserAfter('header',
                     `<div class="amount">
                     <p>Ваша сдача:</p>
-                    <div class="amountSum">${change}₽</div>
+                    <div class="amountSum">${change}</div>
                     </div>`
             )
         }
