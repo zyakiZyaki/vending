@@ -40,6 +40,15 @@ function event() {
         },
         isChosen5: function(e) {
             return isKeydown(e, "Digit5")
+        },
+        isChosenA: function(e) {
+            return isKeydown(e, "KeyA")
+        },
+        isChosenD: function(e) {
+            return isKeydown(e, "KeyD")
+        },
+        isClickedCancel: function (e) {
+            return isChosenSelector(e, ".cancel")
         }
     }
 }

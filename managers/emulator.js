@@ -7,7 +7,7 @@ import event from "./event.js";
 // Из-за данной функции немного посыпалась очередь задач и код стал более громоздкий.
 
 function process(callback) {
-    return setTimeout(callback, 2000)
+    return setTimeout(callback, 1000)
 }
 
 function emulator() {
@@ -42,43 +42,81 @@ function emulator() {
                 success: "Транзакция успешна!",
                 fail: `Транзакция не удалась,
                 попробуйте еще...`,
-                processing: "Обработка карты...",
+                processing1: "Обработка запроса...",
+                processing2: "Соединение с хостом...",
+                processing3: "Получение результата...",
                 cancel: "Принудительная отмена."
             }
-            handler = function (e) {
-                // Если нажата клавиша 2 - отменяем процесс оплаты
-                if (event.isChosen2(e)) {
-                    return this.BankCardCancel(),
-                        display_cb(messages.cancel),
-                        process(function () {
-                            return cb(false)
-                        });
+
+            // Сохраняем внешний контекст this внутри метода(не лучшая практика), чтобы работать с BankCardCancel
+            // Альтернатива: использовать стрелочную функцию
+            // или каррировать функцию и дать внешний контекст первым параметром в его области видимости
+            const self = this
+
+            // Переменная, для хранения состояния, отмены в процессе банкинга
+            let isCancel = false
+
+            // Функция, которая отлавливает отмену в процессе банкинга и меняет состояние переменной isCancel
+            function cancelInProcessing(e) {
+                if (event.isClickedCancel(e)) {
+                    return isCancel = true
                 }
-                // Если нажаты 1 или 0
-                if (event.isChosen1(e) || event.isChosen0(e)) {
-                    //Выбор сделан, лисенер удаляем
-                    listener("keydown").remove(handler)
-                    // Выводим на экран процесс обработки карты
-                    display_cb(messages.processing)
-                    // В зависимости от нажатой кнопки - успешная/неуспешная транзакция
+            }
+            //Функция отмены банкинга до процесса
+            function cancelBeforeProcessing(e) {
+                if (event.isClickedCancel(e)) {
+                    return self.BankCardCancel(),
+                        cancelBankCard()
+                }
+            }
+            // Переиспользуемая часть при отмене банкинга
+            function cancelBankCard() {
+                return display_cb(messages.cancel),
                     process(function () {
-                        if (event.isChosen1(e)) {
-                            return display_cb(messages.success),
-                                process(function () {
-                                    return cb(true)
-                                });
-                        }
-                        if (event.isChosen0(e)) {
-                            return display_cb(messages.fail),
-                                process(function () {
-                                    return cb(false)
-                                });
-                        }
+                        cb(false)
+                    })
+            }
+            handler = function (e) {
+                // Если нажаты A или D
+                if (event.isChosenA(e) || event.isChosenD(e)) {
+                    //Сразу удаляем лисенер отмены операции до процессинга
+                    listener('click').remove(cancelBeforeProcessing)
+                    //Удаляем лисенер на нажатие клавиш успешная/неуспешная операция
+                    listener("keydown").remove(handler)
+                    //Ставим обработчик, который отлавливает нажатие кнопки отмены
+                    listener("click").set(cancelInProcessing)
+                    // Выводим на экран процесс обработки карты1
+                    display_cb(messages.processing1)
+                    process(function () {
+                        // Выводим на экран процесс обработки карты2
+                        display_cb(messages.processing2)
+                        process(function () {
+                            // Выводим на экран процесс обработки карты3
+                            display_cb(messages.processing3)
+                            // В зависимости от нажатой кнопки - успешная/неуспешная транзакция
+                            process(function () {
+                                if (event.isChosenA(e)) {
+                                    return display_cb(messages.success),
+                                        process(function () {
+                                            //Проверяем была ли нажата кнопка отмены, если да, то отменяем транзакцию
+                                            return isCancel ? cancelBankCard() : cb(true)
+                                        });
+                                }
+                                if (event.isChosenD(e)) {
+                                    return display_cb(messages.fail),
+                                        process(function () {
+                                            return isCancel ? cancelBankCard() : cb(false)
+                                        });
+                                }
+                            })
+                        })
                     })
                 }
-            }.bind(this) // Байндим контекст, чтобы работал BankCardCancel
+            }
 
-            return display_cb(messages.init), listener('keydown').set(handler)
+            return display_cb(messages.init),
+                listener('keydown').set(handler), // Слушатель на успех/неуспех
+                listener('click').set(cancelBeforeProcessing) // Слушатель на клик отмены
         },
         BankCardCancel: function () {
             // Удаляем функцию и обработчик
