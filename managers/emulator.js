@@ -36,8 +36,8 @@ function emulator() {
             }
         },
         BankCardPurchase: function (amount, cb, display_cb) {
-            // Сохраняем внешний контекст this
-            const self = this
+
+            let isCancel = false;
 
             const messages = {
                 init: `Сумма к оплате: ${amount}₽.
@@ -51,33 +51,11 @@ function emulator() {
                 cancel: "Принудительная отмена."
             }
 
-            // Функция с замыканием для управления состоянием отмены операции в процессе
-            function cancelInProcessing() {
-                return (function () {
-                    // Переменная isCancel находится в области видимости замыкания
-                    let isCancel = false;
-                    // Возвращаемая функция управляет состоянием isCancel
-                    return function (e) {
-                        if (e) {
-                            // Если передан аргумент, проверяем условие и обновляем isCancel
-                            if (event.isCancelCard(e)) {
-                                isCancel = true;
-                            }
-                        } else {
-                            // Если аргумент не передан, возвращаем текущее значение isCancel
-                            return isCancel;
-                        }
-                    };
-                })();
+            // Функция для управления состоянием отмены операции в процессе
+            function cancelInProcessing(e) {
+                return e && event.isCancelCard(e) ? isCancel = true : isCancel
             }
 
-            //Функция отмены банкинга до процесса
-            function cancelBeforeProcessing(e) {
-                if (event.isCancelCard(e)) {
-                    return self.BankCardCancel(),
-                        cancelBankCard()
-                }
-            }
             // Переиспользуемая часть при отмене банкинга
             function cancelBankCard() {
                 return display_cb(messages.cancel),
@@ -86,13 +64,15 @@ function emulator() {
                     })
             }
             handler = function (e) {
+                if (event.isCancelCard(e)) {
+                    return this.BankCardCancel(),
+                        cancelBankCard()
+                }
                 if (event.isSuccesCard(e) || event.isFailCard(e)) {
-                    //Удаляем лисенер отмены операции до процессинга
-                    listener('click').remove(cancelBeforeProcessing)
                     //Удаляем лисенер на нажатие клавиш успешная/неуспешная операция
                     listener("keydown").remove(handler)
                     //Ставим обработчик, который отлавливает нажатие кнопки отмены
-                    listener("click").set(cancelInProcessing)
+                    listener("keydown").set(cancelInProcessing)
                     // Выводим на экран процесс обработки карты1
                     display_cb(messages.processing1)
                     return process(function () {
@@ -120,11 +100,10 @@ function emulator() {
                         })
                     })
                 }
-            }
+            }.bind(this)
 
             return display_cb(messages.init),
-                listener('keydown').set(handler), // Слушатель на успех/неуспех
-                listener('click').set(cancelBeforeProcessing) // Слушатель на клик отмены
+                listener('keydown').set(handler) // Слушатель на успех/неуспех
         },
         BankCardCancel: function () {
             // Удаляем функцию и обработчик

@@ -48,7 +48,7 @@ function event() {
             return isKeydown(e, "KeyD")
         },
         isCancelCard: function (e) {
-            return isChosenSelector(e, ".cancel")
+            return isKeydown(e, "KeyC")
         }
     }
 }
