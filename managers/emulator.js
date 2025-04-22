@@ -52,23 +52,25 @@ function emulator() {
             }
 
             // Функция с замыканием для управления состоянием отмены операции в процессе
-            const cancelInProcessing = (function() {
-                // Переменная isCancel находится в области видимости замыкания
-                let isCancel = false;
-                // Возвращаемая функция управляет состоянием isCancel
-                return function(e) {
-                    if (e) {
-                        // Если передан аргумент, проверяем условие и обновляем isCancel
-                        if (event.isCancelCard(e)) {
-                            isCancel = true;
+            function cancelInProcessing() {
+                return (function () {
+                    // Переменная isCancel находится в области видимости замыкания
+                    let isCancel = false;
+                    // Возвращаемая функция управляет состоянием isCancel
+                    return function (e) {
+                        if (e) {
+                            // Если передан аргумент, проверяем условие и обновляем isCancel
+                            if (event.isCancelCard(e)) {
+                                isCancel = true;
+                            }
+                        } else {
+                            // Если аргумент не передан, возвращаем текущее значение isCancel
+                            return isCancel;
                         }
-                    } else {
-                        // Если аргумент не передан, возвращаем текущее значение isCancel
-                        return isCancel;
-                    }
-                };
-            })();
-            
+                    };
+                })();
+            }
+
             //Функция отмены банкинга до процесса
             function cancelBeforeProcessing(e) {
                 if (event.isCancelCard(e)) {
