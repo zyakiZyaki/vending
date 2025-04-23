@@ -30,8 +30,8 @@ function emulator() {
         },
         BankCardPurchase: function (amount, cb, display_cb) {
 
-            let bankingProcess = false // Процесс оплаты запущен
-            let isCancel = false // Нажата кнопка отмены
+            let isBankingProcess = false // Процесс оплаты запущен?
+            let isCancel = false // Нажата кнопка отмены?
 
             const messages = {
                 init: `Сумма к оплате: ${amount}₽.
@@ -47,12 +47,12 @@ function emulator() {
             function process(msg) {
                 return new Promise((resolve) => {
                     display_cb(msg),
-                    setTimeout(() => {
-                        resolve()
-                    }, 1000);
+                        setTimeout(() => {
+                            resolve()
+                        }, 1000);
                 });
             }
-            
+
             // Функция для показа массива сообщений
             function showMessage(messages) {
                 return (Array.isArray(messages) ? messages : [messages]) //Проверяем массив или строка
@@ -73,14 +73,14 @@ function emulator() {
             }
             handler = function (e) {
                 if (event.isCancelCard(e)) {
-                    return bankingProcess ? isCancel = true : cancelBankCard(this)
+                    return isBankingProcess ? isCancel = true : cancelBankCard(this)
                 }
                 if (event.isSuccesCard(e) || event.isFailCard(e)) {
-                    if (bankingProcess) {
+                    if (isBankingProcess) {
                         return
                     }
                     else {
-                        bankingProcess = true,
+                        isBankingProcess = true,
                             showMessage([...messages.process, event.isSuccesCard(e) ? messages.success : messages.fail])
                                 .then(() => isCancel ? cancelBankCard(this) : cb(event.isSuccesCard(e)))
                     }
