@@ -2,24 +2,9 @@ import listener from "./listener.js";
 import data from './data.js'
 import event from "./event.js";
 
-// Вспомогательная функция process, на 1 секунду сдвигает выполнение следующе операции.
-// Используется только для иммитации процесса работы оборудования.
-// Из-за данной функции немного посыпалась очередь задач и код стал более громоздкий.
-
-// function process(callback) {
-//     return setTimeout(callback, 1000)
-// }
-
-
-
 function emulator() {
     // Объявляем обработчик в замыкании, будем его перезаписывать, чтобы был доступен для методов удаления
     let handler;
-
-    let bankingProcess = false
-    let isCancel = false;
-    let result = false;
-
 
     return {
         StartCashin: function (cb) {
@@ -45,6 +30,9 @@ function emulator() {
         },
         BankCardPurchase: function (amount, cb, display_cb) {
 
+            let bankingProcess = false // Процесс оплаты запущен
+            let isCancel = false // Нажата кнопка отмены
+
             const messages = {
                 init: `Сумма к оплате: ${amount}₽.
                 Приложите карту.`,
@@ -64,6 +52,7 @@ function emulator() {
                     }, 1000);
                 });
             }
+            
             // Функция для показа массива сообщений
             function showMessage(messages) {
                 return (Array.isArray(messages) ? messages : [messages]) //Проверяем массив или строка
