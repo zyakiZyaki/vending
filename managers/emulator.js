@@ -6,13 +6,21 @@ import event from "./event.js";
 // Используется только для иммитации процесса работы оборудования.
 // Из-за данной функции немного посыпалась очередь задач и код стал более громоздкий.
 
-function process(callback) {
-    return setTimeout(callback, 1000)
-}
+// function process(callback) {
+//     return setTimeout(callback, 1000)
+// }
+
+
 
 function emulator() {
     // Объявляем обработчик в замыкании, будем его перезаписывать, чтобы был доступен для методов удаления
     let handler;
+
+    let bankingProcess = false
+    let isCancel = false;
+    let result = false;
+
+
     return {
         StartCashin: function (cb) {
             if (!handler) {
@@ -37,76 +45,64 @@ function emulator() {
         },
         BankCardPurchase: function (amount, cb, display_cb) {
 
-            let isCancel = false;
-
             const messages = {
                 init: `Сумма к оплате: ${amount}₽.
                 Приложите карту.`,
                 success: "Транзакция успешна!",
                 fail: `Транзакция не удалась,
                 попробуйте еще...`,
-                processing1: "Обработка запроса...",
-                processing2: "Соединение с хостом...",
-                processing3: "Получение результата...",
+                process: ["Обработка запроса...", "Соединение с хостом...", "Получение результата..."],
                 cancel: "Принудительная отмена."
             }
 
-            // Функция для управления состоянием отмены операции в процессе
-            function cancelInProcessing(e) {
-                return e && event.isCancelCard(e) ? isCancel = true : isCancel
+            // Инкапсулируем таймаут в промис
+            function process(msg) {
+                return new Promise((resolve) => {
+                    display_cb(msg),
+                    setTimeout(() => {
+                        resolve()
+                    }, 1000);
+                });
+            }
+            // Функция для показа массива сообщений
+            function showMessage(messages) {
+                return (Array.isArray(messages) ? messages : [messages]) //Проверяем массив или строка
+                    .reduce(
+                        (promise, message) =>
+                            promise.then(() => process(message)),
+                        Promise.resolve()
+                    );
             }
 
-            // Переиспользуемая часть при отмене банкинга
-            function cancelBankCard() {
-                return display_cb(messages.cancel),
-                    process(function () {
-                        return cb(false)
+            // Отмена банкинга
+            function cancelBankCard(self) {
+                return showMessage(messages.cancel)
+                    .then(() => {
+                        self.BankCardCancel()
+                        cb(false)
                     })
             }
             handler = function (e) {
                 if (event.isCancelCard(e)) {
-                    return this.BankCardCancel(),
-                        cancelBankCard()
+                    return bankingProcess ? isCancel = true : cancelBankCard(this)
                 }
                 if (event.isSuccesCard(e) || event.isFailCard(e)) {
-                    //Удаляем лисенер на нажатие клавиш успешная/неуспешная операция
-                    listener("keydown").remove(handler)
-                    //Ставим обработчик, который отлавливает нажатие кнопки отмены
-                    listener("keydown").set(cancelInProcessing)
-                    // Выводим на экран процесс обработки карты1
-                    display_cb(messages.processing1)
-                    return process(function () {
-                        // Выводим на экран процесс обработки карты2
-                        display_cb(messages.processing2)
-                        return process(function () {
-                            // Выводим на экран процесс обработки карты3
-                            display_cb(messages.processing3)
-                            // В зависимости от нажатой кнопки - успешная/неуспешная транзакция
-                            return process(function () {
-                                if (event.isSuccesCard(e)) {
-                                    display_cb(messages.success)
-                                    return process(function () {
-                                        //Проверяем была ли нажата кнопка отмены, если да, то отменяем транзакцию
-                                        return cancelInProcessing() ? cancelBankCard() : cb(true)
-                                    });
-                                }
-                                if (event.isFailCard(e)) {
-                                    display_cb(messages.fail)
-                                    return process(function () {
-                                        return cancelInProcessing() ? cancelBankCard() : cb(false)
-                                    });
-                                }
-                            })
-                        })
-                    })
+                    if (bankingProcess) {
+                        return
+                    }
+                    else {
+                        bankingProcess = true,
+                            showMessage([...messages.process, event.isSuccesCard(e) ? messages.success : messages.fail])
+                                .then(() => isCancel ? cancelBankCard(this) : cb(event.isSuccesCard(e)))
+                    }
                 }
             }.bind(this)
 
-            return display_cb(messages.init),
-                listener('keydown').set(handler) // Слушатель на успех/неуспех
+            return showMessage(messages.init), listener('keydown').set(handler)
+
         },
         BankCardCancel: function () {
-            // Удаляем функцию и обработчик
+            // Удаляем обработчик
             return listener('keydown').remove(handler)
         },
         Vend: function (product_idx, cb, display_cb) {
