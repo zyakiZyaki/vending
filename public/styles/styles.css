@@ -1,0 +1,273 @@
+* {
+  margin: 0;
+}
+
+body {
+  width: 1200px;
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  background-color: grey;
+  color: #333;
+  margin: 0 auto;
+}
+
+.container {
+  width: 100%;
+  background-color:white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+}
+
+header {
+  background-color: #EFCCB9;
+  height: 200px;
+  width: 100%;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content:space-between;
+}
+
+h1 {
+  font-size: 70px;
+  padding: 40px;
+  font-weight:500;
+}
+
+h2 {
+  position: relative;
+  padding-left: 40px;
+  font-size: 100px;
+  margin-bottom: 60px;
+  font-weight: 500;
+  z-index: 2;
+}
+
+h2::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  width: 150px;
+  height: 150px;
+  background-color: #ccc;
+  border-radius: 50%;
+  z-index: -1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  width: 300px;
+  height: 80px;
+  background-color: white;
+  margin-right: 30px;
+  border-radius: 20px;
+}
+
+.call-button {
+  background-color: #ffcc00;
+  color: white;
+  border: none;
+  width: 80px;
+  height: 80px;
+  border-radius: 30%;
+  cursor: pointer;
+  margin-right: 30px;
+  margin-left: -10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.call-button img {
+  width: 30px;
+  height: 30px;
+}
+
+.login-link {
+  text-decoration: none;
+  color: #333;
+  font-size: 20px;
+}
+
+.categories {
+  background-color: #F3F3F3;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-radius: 30px 30px 0 0;
+  margin-top: -30px;
+  height: 400px;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.category {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 400px;
+  background-color: #e5e5e5;
+}
+.active {
+  background-color: rgba(0,0,0,0);
+}
+.active::before {
+  content: "";
+  position: absolute;
+  bottom: -120px;
+  left: 50%;
+  width: 0px;
+  transform: translateX(-50%);
+  height: 120px;
+  border-left: 60px solid transparent;
+  border-right: 60px solid transparent;
+  border-top: 40px solid #f3f3f3;
+  z-index: 1000;
+}
+
+.category img {
+  height: 250px;
+  width: auto;
+  overflow: hidden;
+  margin-bottom: 10px;
+  display: block;
+  position: relative;
+  z-index: 10;
+}
+
+.category::after {
+  content: "";
+  position: absolute;
+  bottom: 150px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 150px;
+  background-color: #fddcd6;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.category p {
+  position: relative;
+  font-size: 35px;
+  z-index: 20;
+}
+
+.products {
+  background-color: white;
+  border-radius: 30px 30px 0 0;
+  margin-top: -30px;
+  padding-top: 100px;
+  padding-bottom: 70px;
+  width: 100%;
+  z-index: 100;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 0 20px 0 20px;
+}
+
+.product {
+  background-color: white;
+  padding: 10px;
+  border: 2px solid #eee;
+  border-radius: 30px;
+  position: relative;
+  text-align: center;
+  height: 350px;
+}
+
+.product img {
+  height: 250px;
+  border-radius: 15px;
+  margin-bottom: 10px;
+}
+
+.product p.drink-name {
+  font-size: 20px;
+}
+.product p.drink-price {
+  font-size: 18px;
+}
+.product p.drink-price span {
+  font-size: 35px;
+}
+
+.product span {
+  font-weight: bold;
+}
+
+.popular-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ffcc00;
+  border-radius: 50%;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 40px;
+}
+
+.kindPay {
+  display:flex;
+  align-items: center;
+  justify-content:center;
+  margin-top:100px;
+}
+button {
+  margin: 40px;
+}
+
+.amount {
+  margin-top: 50px;
+  display:flex;
+  flex-direction:column;
+  justify-content: center;
+  align-items:center;
+}
+.amount div {
+  font-size: 200px;
+}
+
+.pinpad, .vending {
+  display: flex;
+  border: 2px solid grey;
+  width:300px;
+  margin-top: 50px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  height:300px;
+  padding-top: 20px;
+}
+.pinpad_message, .vending_message {
+  text-align:center;
+  padding: 20px;
+}
+
+.cash, .card {
+  height:100px;
+  width: 200px;
+}
+.instruct {
+  padding-left: 40px;
+}
+.cancel {
+  font-weight: 700;
+  padding:20px;
+}
