@@ -2,7 +2,7 @@
 // Базой для хранения заказа выступает localStorage. Так мы не потеряет информацию при перезагрузке страницы,
 // Это один из варинтов для данной задачи.
 
-function order() {
+function createOrderStorage() {
     return {
         get: function () {
             return JSON.parse(localStorage.getItem("newOrder"))
@@ -13,52 +13,54 @@ function order() {
     }
 }
 
-function orderMethods(get, set) {
+function orderMethods({ get, set }) {
+
     return {
-        getPrice: function() {
+        getProductPrice: function () {
             return +get().price
         },
-        getAmount: function() {
-            return +get().amount
-        },
-        isPaid: function() {
-            return get().isPaid
-        },
-        getIdx: function() {
+        getProductIdx: function () {
             return +get().idx
         },
-        setPaidTrue: function() {
-            const order = get()
+        isPaidStatusTrue: function () {
+            return get().isPaid
+        },
+        setPaidStatusTrue: function () {
             return set({
-                ...order,
+                ...get(),
                 isPaid: true
             })
         },
-        addToAmount: function(cash) {
-            const order = get()
-            return set({
-                ...order,
-                amount: order.amount + cash
-            })
+        getNewAmount: function (cash) {
+            return cash
+                && (
+                    set({
+                        ...get(),
+                        amount: get().amount + cash
+                    }),
+                    +get().amount
+                )
         },
-        completed: function() {
-            return set({})
-        },
-        refreshAmount: function(cash) {
-            if (cash !== 0) {
-                this.addToAmount(cash)
-            }
-            return this.getAmount()
-        },
-        createNewOrder: function(obj) {
+        createNewOrder: function (obj) {
             return set({
                 ...obj,
                 amount: 0,
                 id: Date.now().toString(),
                 isPaid: false
             })
+        },
+        orderCompleted: function() {
+            return set({})
         }
     }
 }
 
-export default orderMethods(order().get, order().set)
+export const {
+    createNewOrder,
+    getNewAmount,
+    setPaidStatusTrue,
+    getProductPrice,
+    isPaidStatusTrue,
+    getProductIdx,
+    orderCompleted
+} = orderMethods(createOrderStorage())

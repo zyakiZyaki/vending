@@ -1,20 +1,21 @@
 import productsData from '../data/index.js'
 
 function data(data) {
-    return {
-        getData: function() {
-            return data
-        },
-        getProduct: function(idx) {
+    function getProductData(idx) {
             return Object
                 .values(data)
                 .flatMap(category => Object.values(category.products || {}))
                 .find(product => product.idx === +idx);
+        }
+    return {
+        getProductData,
+        getData: function() {
+            return data
         },
         getProductTitle: function(idx) {
-            return this.getProduct(idx).title
+            return getProductData(idx).title
         }
     }
 }
 
-export default data(productsData)
+export const { getProductData, getProductTitle, getData } = data(productsData)

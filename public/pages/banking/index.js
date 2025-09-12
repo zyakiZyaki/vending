@@ -1,20 +1,36 @@
-import router from '../../managers/router.js'
-import order from '../../managers/order.js'
-import html from '../../managers/html.js'
-import emulator from '../../managers/emulator.js'
-
-//Сразу вызываем эмулятор
-
-emulator.BankCardPurchase(order.getPrice(), isPaymentOk, html.pinpadMessage)
+import { redirectTo } from '../../managers/router.js'
+import { setPaidStatusTrue, getProductPrice } from '../../managers/order.js'
+import { pinpadMessage } from '../../managers/html.js'
+import bankingEmulator from '../../emulators/bankingEmulator.js'
 
 //Если оплата прошла, меняем статус заказа на оплаченный и переадресуем на страницу вендинга
 //В противном случае перезагружаем страницу
 
-function isPaymentOk(bool) {
-    if(bool) {
-        return order.setPaidTrue(), router.redirectTo('vending')
-    }
-    else {
-        return location.reload()
+function isPaid(changeOrderStatus, redirect, reload) {
+    return function (bool) {
+        return bool
+            ?
+            (
+                changeOrderStatus(),
+                redirect()
+            )
+            :
+            (
+                reload()
+            )
     }
 }
+
+const { BankCardPurchase, BankCardCancel } =
+    bankingEmulator(
+        getProductPrice(),
+        isPaid(
+            setPaidStatusTrue,
+            () => redirectTo('vending'),
+            () => location.reload()
+        ),
+        pinpadMessage,
+        () => BankCardCancel()
+    )
+
+BankCardPurchase()

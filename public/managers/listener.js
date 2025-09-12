@@ -1,12 +1,16 @@
 // Функция для Лисенера
 
-export default function listener(event) {
-    return {
-        set: function(fn) {
-            return document.addEventListener(event, fn)
-        },
-        remove: function(fn) {
-            return document.removeEventListener(event, fn)
+function listener(setListener, removeListener) {
+    return function (event, cb) {
+        return {
+            setListener: function () {
+                return setListener(event, cb)
+            },
+            removeListener: function () {
+                return removeListener(event, cb)
+            }
         }
     }
 }
+
+export default listener(document.addEventListener, document.removeEventListener)

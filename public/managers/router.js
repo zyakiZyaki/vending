@@ -2,12 +2,12 @@ import routes from "../routes/index.js"
 
 // Функция для работы с роутами
 
-function router(routes) {
+function router(routes, location) {
     return {
         redirectTo: function(str) {
-            return window.location.href = routes[str]
+            return location.assign(routes[str])
         }
     }
 }
 
-export default router(routes)
+export const { redirectTo } = router(routes, window.location);
