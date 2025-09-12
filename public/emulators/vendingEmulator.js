@@ -47,4 +47,12 @@ function vendingEmulator(showMessage, messages, handler, getProduct) {
     }
 }
 
-export default vendingEmulator(showMessage, messages, handler(isPressKeyA, isPressKeyD), getProductTitle)
+export default vendingEmulator(
+    showMessage,
+    messages,
+    handler(
+        isPressKeyA,
+        isPressKeyD
+    ),
+    getProductTitle
+)

@@ -8,7 +8,7 @@ import { createNewOrder } from '../../managers/order.js'
 const { setListener, removeListener } =
     listener("click",
         handler(
-            () => removeListener(),
+            () => removeListener(), // Колбэк для удаления слушателя
             isChosenNewCategory,
             reRenderMenu,
             getChosenCategory,

@@ -30,7 +30,7 @@ const { BankCardPurchase, BankCardCancel } =
             () => location.reload()
         ),
         pinpadMessage,
-        () => BankCardCancel()
+        () => BankCardCancel() // Подаем метод кобэком
     )
 
 BankCardPurchase()

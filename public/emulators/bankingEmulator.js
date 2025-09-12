@@ -14,7 +14,7 @@ const messages = (amount) => ({
 
 function handler(isCancelCardPay, isSuccessCardPay, isFailCardPay) {
     return function ({ init, success, fail, process }, show, complited, BankCardCancel) {
-        let [isCancelEvent, isSuccessProcessStarted] = [false, false]
+        let [isCancelEvent, isSuccessProcessStarted] = [false, false] // Переменные для хранения состояния
         return (
             show(init),
             function (e) {
@@ -74,7 +74,7 @@ function bankEmulator(listener, messages, showMessage, handler, complited) {
             },
             // Так как в ТЗ требуется написать этот метод и использовать,
             // добавил в него удаление лисенера, завершение заказа с сообщением отмены и cb(false)
-            // Заллогировал, чтобы можно было подтвердить работу в консоле
+            // Заллогировал, чтобы можно было подтвердить работу в консоли
             BankCardCancel: function () {
                 return console.log('BankCardCancel'),
                     complited(

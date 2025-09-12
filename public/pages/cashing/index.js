@@ -12,7 +12,7 @@ const { StartCashin, StopCashin } =
             setPaidStatusTrue,
             getProductPrice(),
             function () {
-                return StopCashin()
+                return StopCashin() // Подаем метод колбэком
             },
             function () {
                 return setTimeout(
