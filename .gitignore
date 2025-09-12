@@ -8,7 +8,7 @@ firebase-debug.log*
 firebase-debug.*.log*
 
 # Firebase cache
-.firebase/
+.firebaserc
 
 # Firebase config
 firebase.json
@@ -71,6 +71,3 @@ node_modules/
 .DS_Store
 Thumbs.db
 .vscode/
-
-# arhiv
-.arhiv
