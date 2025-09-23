@@ -1,6 +1,6 @@
 import listener from "../managers/listener.js";
 import { isPressKeyA, isPressKeyD, isPressKeyC } from "../managers/event.js";
-import { showMessage, complited } from "./utils.js";
+import { showMessage, resultStagePayment, cbWrapperWithCancelAllListeners, complited } from "./utils.js";
 
 const messages = (amount) => ({
     init: `Сумма к оплате: ${amount}₽.
@@ -12,92 +12,150 @@ const messages = (amount) => ({
     cancel: "Принудительная отмена."
 })
 
-function handler(isCancelCardPay, isSuccessCardPay, isFailCardPay) {
-    return function ({ init, success, fail, process }, show, complited, BankCardCancel) {
-        let [isCancelEvent, isSuccessProcessStarted] = [false, false] // Переменные для хранения состояния
-        return (
-            show(init),
-            function (e) {
-                if (isCancelCardPay(e)) {
-                    return isSuccessProcessStarted
-                        ?
-                        (isCancelEvent = true)
-                        :
-                        BankCardCancel()
-                }
 
-                if (isFailCardPay(e)) {
-                    return !isSuccessProcessStarted
-                        && complited([...process, fail], false)
-                }
-
-                if (isSuccessCardPay(e)) {
-                    return !isSuccessProcessStarted
-                        && (
-                            isSuccessProcessStarted = true,
-                            show(process)
-                                .then(
-                                    () => isCancelEvent
-                                        ?
-                                        BankCardCancel()
-                                        :
-                                        complited(success, true)
-                                )
-                        )
-                }
+function bankPaymentFactory(listener, handlerFirstStage, handlerSecondStage, isCancel, isFail, isSuccess) {
+    return function ({ init, process, fail, success, cancel }, result) {
+        return {
+            initPayment: function () {
+                result(
+                    {
+                        msg: init,
+                        isComplited: false
+                    }
+                )
+            },
+            listenCancelCannel: function () {
+                return new Promise(
+                    wasPressed =>
+                        listener('keydown',
+                            e =>
+                                isCancel(e)
+                                && wasPressed(
+                                        {
+                                            msg: cancel,
+                                            result: false,
+                                            isComplited: true
+                                        }
+                                    )).setListener()
+                )
+            },
+            listenMainChannel: function (cancel) {
+                return new Promise(
+                    wasPressed =>
+                        listener('keydown',
+                            handlerFirstStage(
+                                isFail,
+                                isSuccess,
+                                wasPressed,
+                                process,
+                                fail,
+                                success,
+                                handlerSecondStage(result, cancel)
+                            )
+                        ).setListener()
+                )
+            },
+            listenChannels: function (...args) {
+                return Promise
+                    .race(args)
+                    .then(result)
             }
-        )
+        }
     }
 }
 
-function bankEmulator(listener, messages, showMessage, handler, complited) {
 
-    return function (amount, cb, display_cb, BankCardCancel) {
+function handlerFirstStage(
+    isFail,
+    isSuccess,
+    wasPressed,
+    process,
+    fail,
+    success,
+    nextStage
+) {
+    return function (e) {
+        if (isFail(e)) {
+            return wasPressed(
+                {
+                    msg: [...process, fail],
+                    result: false,
+                    isComplited: true
+                }
+            )
+        }
+        if (isSuccess(e)) {
+            return wasPressed(
+                {
+                    msg: process,
+                    result: () =>
+                        nextStage(
+                            {
+                                isComplited: true,
+                                msg: success,
+                                result: true
+                            }
+                        ),
+                    isComplited: false
+                }
+            )
+        }
+    }
+}
 
-        const { setListener, removeListener } =
-            listener("keydown",
-                handler(
-                    messages(amount),
-                    showMessage(display_cb),
-                    complited(
-                        () => removeListener(),
-                        showMessage(display_cb),
-                        cb
-                    ),
-                    () => BankCardCancel()
+function handlerSecondStage(result, cancel) {
+    return function (success) {
+        return Promise
+            .race([
+                cancel,
+                success
+            ])
+            .then(result)
+    }
+}
+
+function bankEmulator(bankPaymentFactory, result, displayWrapper, messages, cbWrapper) {
+    return function (amount, cb, display_cb) {
+
+        const { initPayment, listenCancelCannel, listenMainChannel, listenChannels } =
+            bankPaymentFactory(
+                messages(amount),
+                result(
+                    displayWrapper(display_cb),
+                    cbWrapper(cb)
                 )
             )
 
         return {
-            BankCardPurchase: function () {
-                return setListener()
-            },
-            // Так как в ТЗ требуется написать этот метод и использовать,
-            // добавил в него удаление лисенера, завершение заказа с сообщением отмены и cb(false)
-            // Заллогировал, чтобы можно было подтвердить работу в консоли
-            BankCardCancel: function () {
-                return console.log('BankCardCancel'),
-                    complited(
-                        () => removeListener(),
-                        showMessage(display_cb),
-                        cb
-                    )(
-                        messages().cancel,
-                        false
+            BankCardPurchase: function (BankCardCancel) {
+                return initPayment(),
+                    listenChannels(
+                        BankCardCancel,
+                        listenMainChannel(
+                            BankCardCancel
+                        )
                     )
+            },
+            BankCardCancel: function () {
+                return listenCancelCannel()
             }
         }
     }
 }
 
 export default bankEmulator(
-    listener,
-    messages,
-    showMessage,
-    handler(
+    bankPaymentFactory(
+        listener,
+        handlerFirstStage,
+        handlerSecondStage,
         isPressKeyC,
-        isPressKeyA,
-        isPressKeyD
+        isPressKeyD,
+        isPressKeyA
     ),
-    complited
+    resultStagePayment,
+    showMessage,
+    messages,
+    cbWrapperWithCancelAllListeners(
+        listener().cancelAll
+    )
 )

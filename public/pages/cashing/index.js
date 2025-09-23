@@ -37,7 +37,7 @@ function processPayment(
     stopEmulator,
     redirectToNextPage
 ) {
-    return function (cash) { 
+    return function (cash) {
         const amount = getNewAmount(cash) // После ввода cash, получаем сумму amount
         return amount < price // Условие работы эмулятора
             ?

@@ -21,6 +21,7 @@ function isPaid(changeOrderStatus, redirect, reload) {
     }
 }
 
+
 const { BankCardPurchase, BankCardCancel } =
     bankingEmulator(
         getProductPrice(),
@@ -29,8 +30,7 @@ const { BankCardPurchase, BankCardCancel } =
             () => redirectTo('vending'),
             () => location.reload()
         ),
-        pinpadMessage,
-        () => BankCardCancel() // Подаем метод кобэком
+        pinpadMessage
     )
 
-BankCardPurchase()
+BankCardPurchase(BankCardCancel())

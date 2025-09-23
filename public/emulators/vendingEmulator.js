@@ -9,13 +9,13 @@ const messages = (product) => ({
     fail: "Приготовление не удалось, попробуйте еще..."
 })
 
-function handler( isSuccessVending, isFailVending ) {
+function handler( isSuccess, isFail ) {
     return function (complited, show, { init, success, fail }) {
         return (
             show(init),
             function (e) {
-                if (isSuccessVending(e)) return complited(success, true)
-                if (isFailVending(e)) return complited(fail, false)
+                if (isSuccess(e)) return complited(success, true)
+                if (isFail(e)) return complited(fail, false)
             }
         )
     }
