@@ -47,7 +47,8 @@ export function stageResultInterpretator(show, cb) {
 export function cbWrapperWithCancelAllListeners(removeListeners) {
     return function (cb) {
         return function (result) {
-            return removeListeners(), cb(result)
+            removeListeners()
+            return cb(result)
         }
     }
 }
