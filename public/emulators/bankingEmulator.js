@@ -1,6 +1,6 @@
 import listener from "../managers/listener.js";
 import { isPressKeyA, isPressKeyD, isPressKeyC } from "../managers/event.js";
-import { showMessage, resultStagePayment, cbWrapperWithCancelAllListeners, complited } from "./utils.js";
+import { showMessage, stageResultInterpretator, cbWrapperWithCancelAllListeners, createNewChannel } from "./utils.js";
 
 const messages = (amount) => ({
     init: `Сумма к оплате: ${amount}₽.
@@ -12,147 +12,101 @@ const messages = (amount) => ({
     cancel: "Принудительная отмена."
 })
 
-
-function bankPaymentFactory(listener, handlerFirstStage, handlerSecondStage, isCancel, isFail, isSuccess) {
-    return function ({ init, process, fail, success, cancel }, result) {
+// Фабричная функция с прослушиваемыми каналами(кнопками) и методом их инициации
+function bankCardPurchaseFactory(createNewChannel, isCancel, isFail, isSuccess) {
+    return function ({ init, process, fail, success, cancel }, resultInterpretator) {
         return {
-            initPayment: function () {
-                result(
-                    {
-                        msg: init,
-                        isComplited: false
-                    }
-                )
-            },
-            listenCancelCannel: function () {
-                return new Promise(
-                    wasPressed =>
-                        listener('keydown',
-                            e =>
-                                isCancel(e)
-                                && wasPressed(
-                                        {
-                                            msg: cancel,
-                                            result: false,
-                                            isComplited: true
-                                        }
-                                    )).setListener()
-                )
-            },
-            listenMainChannel: function (cancel) {
-                return new Promise(
-                    wasPressed =>
-                        listener('keydown',
-                            handlerFirstStage(
-                                isFail,
-                                isSuccess,
-                                wasPressed,
-                                process,
-                                fail,
-                                success,
-                                handlerSecondStage(result, cancel)
-                            )
-                        ).setListener()
-                )
-            },
-            listenChannels: function (...args) {
-                return Promise
-                    .race(args)
-                    .then(result)
-            }
-        }
-    }
-}
-
-
-function handlerFirstStage(
-    isFail,
-    isSuccess,
-    wasPressed,
-    process,
-    fail,
-    success,
-    nextStage
-) {
-    return function (e) {
-        if (isFail(e)) {
-            return wasPressed(
-                {
-                    msg: [...process, fail],
-                    result: false,
-                    isComplited: true
-                }
-            )
-        }
-        if (isSuccess(e)) {
-            return wasPressed(
-                {
-                    msg: process,
-                    result: () =>
-                        nextStage(
+            start: function (next) {
+                return next({
+                    raceChannels: function (...listenedChannels) { // Получаем каналы
+                        return resultInterpretator( // Запускаем интерпретатор результата
                             {
-                                isComplited: true,
-                                msg: success,
-                                result: true
+                                msg: init,
+                                result: listenedChannels
+                            }
+                        )
+                    },
+                    listenCancelCannel:
+                        createNewChannel(
+                            isCancel,
+                            {
+                                msg: cancel,
+                                result: false
                             }
                         ),
-                    isComplited: false
-                }
-            )
+                    listenFailCannel:
+                        createNewChannel(
+                            isFail,
+                            {
+                                msg: [...process, fail],
+                                result: false
+                            }
+                        ),
+                    listenSuccesCannel: function (cancelChannel) {
+                        return createNewChannel(
+                            isSuccess,
+                            {
+                                msg: process,
+                                result: [
+                                    cancelChannel,
+                                    {
+                                        msg: success,
+                                        result: true
+                                    }
+                                ]
+                            }
+                        )
+                    }
+                })
+            }
         }
     }
 }
 
-function handlerSecondStage(result, cancel) {
-    return function (success) {
-        return Promise
-            .race([
-                cancel,
-                success
-            ])
-            .then(result)
-    }
-}
-
-function bankEmulator(bankPaymentFactory, result, displayWrapper, messages, cbWrapper) {
-    return function (amount, cb, display_cb) {
-
-        const { initPayment, listenCancelCannel, listenMainChannel, listenChannels } =
-            bankPaymentFactory(
+function bankEmulator(bankCardPurchaseFactory, result, displayWrapper, messages, cbWrapper) {
+    return {
+        BankCardPurchase: function (amount, cb, display_cb) {
+            return bankCardPurchaseFactory(
                 messages(amount),
                 result(
-                    displayWrapper(display_cb),
-                    cbWrapper(cb)
+                    displayWrapper(display_cb), // Оборачиваем display_cb в функцию промис, показывающую сообщение через 1 сек
+                    cbWrapper(cb) // Оборачиваем cb в функцию, удалющую все висящие лисенеры
                 )
             )
-
-        return {
-            BankCardPurchase: function (BankCardCancel) {
-                return initPayment(),
-                    listenChannels(
-                        BankCardCancel,
-                        listenMainChannel(
-                            BankCardCancel
+                .start(
+                    ({ raceChannels, listenCancelCannel, listenSuccesCannel, listenFailCannel }) =>
+                        raceChannels(
+                            listenCancelCannel,
+                            listenFailCannel,
+                            listenSuccesCannel(
+                                listenCancelCannel
+                            )
                         )
-                    )
-            },
-            BankCardCancel: function () {
-                return listenCancelCannel()
-            }
+                )
+        },
+        // Метод нигде в коде не используется,
+        // но при вызове вернет удаление всех лисенеров, вызов колбэка с false
+        // и выведет сообщение об отмене
+        BankCardCancel: function () {
+            return result(
+                displayWrapper(display_cb),
+                cbWrapper(cb)
+            )({
+                msg: cancel,
+                result: false
+            })
         }
     }
 }
 
 export default bankEmulator(
-    bankPaymentFactory(
-        listener,
-        handlerFirstStage,
-        handlerSecondStage,
+    bankCardPurchaseFactory(
+        createNewChannel(listener),
         isPressKeyC,
         isPressKeyD,
         isPressKeyA
     ),
-    resultStagePayment,
+    stageResultInterpretator,
     showMessage,
     messages,
     cbWrapperWithCancelAllListeners(

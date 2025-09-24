@@ -9,7 +9,7 @@ const messages = (product) => ({
     fail: "Приготовление не удалось, попробуйте еще..."
 })
 
-function handler( isSuccess, isFail ) {
+function handler(isSuccess, isFail) {
     return function (complited, show, { init, success, fail }) {
         return (
             show(init),
@@ -23,26 +23,23 @@ function handler( isSuccess, isFail ) {
 
 function vendingEmulator(showMessage, messages, handler, getProduct) {
 
-    return function (product_idx, cb, display_cb) {
-
-        const { setListener, removeListener } =
-            listener("keydown",
-                handler(
-                    complited(
-                        () => removeListener(),
+    return {
+        Vend: function (product_idx, cb, display_cb) {
+            const { setListener, removeListener } =
+                listener("keydown",
+                    handler(
+                        complited(
+                            () => removeListener(),
+                            showMessage(display_cb),
+                            cb
+                        ),
                         showMessage(display_cb),
-                        cb
-                    ),
-                    showMessage(display_cb),
-                    messages(getProduct(product_idx)
+                        messages(
+                            getProduct(product_idx)
+                        )
                     )
                 )
-            )
-
-        return {
-            Vend: function () {
-                return setListener()
-            }
+            return setListener()
         }
     }
 }

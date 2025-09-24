@@ -22,8 +22,10 @@ function isPaid(changeOrderStatus, redirect, reload) {
 }
 
 
-const { BankCardPurchase, BankCardCancel } =
-    bankingEmulator(
+//Запускаем эмулятор
+
+bankingEmulator
+    .BankCardPurchase(
         getProductPrice(),
         isPaid(
             setPaidStatusTrue,
@@ -32,5 +34,3 @@ const { BankCardPurchase, BankCardCancel } =
         ),
         pinpadMessage
     )
-
-BankCardPurchase(BankCardCancel())

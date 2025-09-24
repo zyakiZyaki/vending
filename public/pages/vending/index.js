@@ -20,13 +20,14 @@ function isVendingCompleted(orderCompleted, redirect, reload) {
 //Проверяем статус оплачен ли заказ, если да то запускаем эмулятор выдачи
 
 if (isPaidStatusTrue()) {
-    vendingEmulator(
-        getProductIdx(),
-        isVendingCompleted(
-            orderCompleted,
-            () => redirectTo('choosingProduct'),
-            () => location.reload()
-        ),
-        vendingMessage
-    ).Vend()
-}
+    vendingEmulator
+        .Vend(
+            getProductIdx(),
+            isVendingCompleted(
+                orderCompleted,
+                () => redirectTo('choosingProduct'),
+                () => location.reload()
+            ),
+            vendingMessage
+        )
+} 

@@ -14,7 +14,7 @@ function listener(
                 return removeListener(event, cb, { signal: controller.signal })
             },
             cancelAll: function () {
-                console.log('abort_controller'), controller.abort()
+                controller.abort()
             }
         };
     };

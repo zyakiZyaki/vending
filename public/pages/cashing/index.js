@@ -3,7 +3,9 @@ import { getNewAmount, setPaidStatusTrue, getProductPrice } from '../../managers
 import { reRenderAmountBlock, renderBlockWithChange } from "../../managers/html.js"
 import cashinEmulator from "../../emulators/cashinEmulator.js"
 
-const { StartCashin, StopCashin } =
+
+
+const { StartCashin, StopCashin } = // Получаем методы
     cashinEmulator(
         processPayment(
             getNewAmount,
@@ -12,7 +14,7 @@ const { StartCashin, StopCashin } =
             setPaidStatusTrue,
             getProductPrice(),
             function () {
-                return StopCashin() // Подаем метод колбэком
+                return StopCashin() // Подаем метод отмены колбэком
             },
             function () {
                 return setTimeout(
@@ -23,7 +25,7 @@ const { StartCashin, StopCashin } =
         )
     )
 
-StartCashin()
+StartCashin() // Запуск эмулятора
 
 
 // Функция логики процесса оплаты и сопутствующих действий
@@ -39,7 +41,7 @@ function processPayment(
 ) {
     return function (cash) {
         const amount = getNewAmount(cash) // После ввода cash, получаем сумму amount
-        return amount < price // Условие работы эмулятора
+        amount < price // Условие работы эмулятора
             ?
             (
                 showOnDisplay(amount)

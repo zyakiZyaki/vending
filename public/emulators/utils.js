@@ -27,28 +27,41 @@ export function complited(stopListen, show, cb) {
     }
 }
 
-export function resultStagePayment(show, cb) {
-    return function ({ msg, result, isComplited }) {
+// Функция интерпретирующая результат этапа банковской опалты
+export function stageResultInterpretator(show, cb) {
+    return function ({ msg, result }) {
         return show(msg)
-            .then(() => {
-                if (result === undefined) {
-                    return
-                }
-                isComplited && typeof result === 'boolean'
+            .then(() =>
+                typeof result === 'boolean' // Если подается булево значение - вызываем колбэк и завершаем процесс
                     ?
                     cb(result)
                     :
-                    result()
-
-            })
+                    Promise 
+                        .race(result) // В ппотивном случае ожидаем победителя в гонке промисов
+                        .then(stageResultInterpretator(show, cb)) // И снова запускаем интерпретатор
+            )
     }
 }
 
+// Функция обертка для cb, удаляющая все висящие лисенеры при завершении процесса оплаты
 export function cbWrapperWithCancelAllListeners(removeListeners) {
     return function (cb) {
         return function (result) {
-            removeListeners()
-            return cb(result)
+            return removeListeners(), cb(result)
         }
+    }
+}
+
+// Функция, создающая новый слушатель на канал/кнопку
+export function createNewChannel(listener) {
+    return function (condition, result) { // Принимает условие и результат разрешения промиса
+        return new Promise(
+            resolve =>
+                listener('keydown',
+                    function (event) {
+                        condition(event) && resolve(result)
+                    }
+                ).setListener()
+        )
     }
 }
