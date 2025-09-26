@@ -11,13 +11,11 @@ const messages = (product) => ({
 
 function handler(isSuccess, isFail) {
     return function (complited, show, { init, success, fail }) {
-        return (
-            show(init),
+        return show(init),
             function (e) {
                 if (isSuccess(e)) return complited(success, true)
                 if (isFail(e)) return complited(fail, false)
             }
-        )
     }
 }
 

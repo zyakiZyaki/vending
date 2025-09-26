@@ -27,6 +27,23 @@ export function complited(stopListen, show, cb) {
     }
 }
 
+// Функция интерпретации события, согласно объекту с вариантами
+export function eventInterpretator(variants) {
+    return function (event, cb) {
+        return Object
+            .entries(variants)
+            .some(
+                ([key, validate]) => {
+                    if (validate(event))
+                    cb(
+                        Number(key) // Преобразуем в число
+                    )
+                    return true // Возвращаем флаг для .some() остановить перебор
+                }
+            )
+    }
+}
+
 // Функция интерпретирующая результат этапа банковской опалты
 export function stageResultInterpretator(show, cb) {
     return function ({ msg, result }) {

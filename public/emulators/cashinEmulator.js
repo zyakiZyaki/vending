@@ -1,12 +1,19 @@
 import { isPressKeyA, isPressKeyS, isPressKeyD } from "../managers/event.js";
 import listener from "../managers/listener.js";
+import { eventInterpretator } from "./utils.js"
 
-function handler(isInserted10, isInserted20, isInserted50) {
+const variants =
+    (is10, is20, is50) =>
+    ({
+        '10': is10,
+        '20': is20,
+        '50': is50
+    })
+
+function handler(interpretator) {
     return function (cb) {
-        return function (e) {
-            if (isInserted10(e)) return cb(10)
-            if (isInserted20(e)) return cb(20)
-            if (isInserted50(e)) return cb(50)
+        return function (event) {
+            return interpretator(event, cb)
         }
     }
 }
@@ -33,8 +40,12 @@ function cashinEmulator(listener, handler) {
 export default cashinEmulator(
     listener,
     handler(
-        isPressKeyA,
-        isPressKeyS,
-        isPressKeyD
+        eventInterpretator(
+            variants(
+                isPressKeyA,
+                isPressKeyS,
+                isPressKeyD
+            )
+        )
     )
 )

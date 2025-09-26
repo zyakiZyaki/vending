@@ -44,6 +44,7 @@ function processPayment(
         amount < price // Условие работы эмулятора
             ?
             (
+
                 showOnDisplay(amount)
             )
             :
