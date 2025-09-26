@@ -34,11 +34,12 @@ export function eventInterpretator(variants) {
             .entries(variants)
             .some(
                 ([key, validate]) => {
-                    if (validate(event))
-                    cb(
-                        Number(key) // Преобразуем в число
-                    )
-                    return true // Возвращаем флаг для .some() остановить перебор
+                    if (validate(event)) {
+                        cb(
+                            Number(key) // Преобразуем в число
+                        )
+                        return true // Возвращаем флаг для .some() остановить перебор
+                    }
                 }
             )
     }
@@ -53,7 +54,7 @@ export function stageResultInterpretator(show, cb) {
                     ?
                     cb(result)
                     :
-                    Promise 
+                    Promise
                         .race(result) // В ппотивном случае ожидаем победителя в гонке промисов
                         .then(stageResultInterpretator(show, cb)) // И снова запускаем интерпретатор
             )
