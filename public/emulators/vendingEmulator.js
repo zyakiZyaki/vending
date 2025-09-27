@@ -1,6 +1,6 @@
 import { isPressKeyA, isPressKeyD } from "../managers/event.js";
 import listener from "../managers/listener.js";
-import { showMessage, complited } from "./utils.js";
+import { showMessages, complited } from "./utils.js";
 import { getProductTitle } from '../managers/data.js'
 
 const messages = (product) => ({
@@ -28,7 +28,7 @@ function vendingEmulator(showMessage, messages, handler, getProduct) {
                     handler(
                         complited(
                             () => removeListener(),
-                            showMessage(display_cb),
+                            showMessages(display_cb),
                             cb
                         ),
                         showMessage(display_cb),

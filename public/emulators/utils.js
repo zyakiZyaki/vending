@@ -1,29 +1,44 @@
-// Инкапсулируем таймаут в промис
-function process(msg, cb) {
-    return new Promise((resolve) => {
-        cb(msg),
-            setTimeout(() => {
-                resolve()
-            }, 1000);
-    });
+// Функция вызывающая задержку после вызова display_cb
+function showMessageProcess(msg, display_cb) {
+    return new Promise(
+        function (resolve) {
+            display_cb(msg) // Вызываем сразу колбэк с сообщением
+            setTimeout(resolve, 1000) // Резолвим промис после 1 сек задержки
+        })
 }
 
-// Функция для показа массива сообщений
-export function showMessage(display_cb) {
+// Функция приведения сообщения к массиву
+function formatedMsgs(msgs) {
+    //Проверяем массив или одно сообщение, если одно - оборачиваем в массив
+    return Array.isArray(msgs) ? msgs : [msgs]
+}
+
+// Универсальная функция для показа сообщений
+export function showMessages(display_cb) {
     return function (messages) {
-        return (Array.isArray(messages) ? messages : [messages]) //Проверяем массив или строка
+        return formatedMsgs(messages)
             .reduce(
-                (promise, message) =>
-                    promise.then(() => process(message, display_cb)),
+                (acc, message) =>
+                    acc.then(
+                        function () {
+                            return showMessageProcess(message, display_cb)
+                        }
+                    ),
                 Promise.resolve()
-            );
+            )
     }
 }
 
 // Функция завершения процесса оплаты
 export function complited(stopListen, show, cb) {
     return function (msg, result) {
-        return stopListen(), show(msg).then(() => cb(result))
+        stopListen()
+        return show(msg)
+            .then(
+                function () {
+                    return cb(result)
+                }
+            )
     }
 }
 
@@ -33,7 +48,7 @@ export function eventInterpretator(variants) {
         return Object
             .entries(variants)
             .some(
-                ([key, validate]) => {
+                function ([key, validate]) {
                     if (validate(event)) {
                         cb(
                             Number(key) // Преобразуем в число
@@ -49,14 +64,16 @@ export function eventInterpretator(variants) {
 export function stageResultInterpretator(show, cb) {
     return function ({ msg, result }) {
         return show(msg)
-            .then(() =>
-                typeof result === 'boolean' // Если подается булево значение - вызываем колбэк и завершаем процесс
-                    ?
-                    cb(result)
-                    :
-                    Promise
-                        .race(result) // В ппотивном случае ожидаем победителя в гонке промисов
-                        .then(stageResultInterpretator(show, cb)) // И снова запускаем интерпретатор
+            .then(
+                function () {
+                    return typeof result === 'boolean' // Если подается булево значение
+                        ?
+                        cb(result) // Вызываем колбэк и завершаем процесс
+                        :
+                        Promise
+                            .race(result) // В противном случае ожидаем победителя в гонке промисов
+                            .then(stageResultInterpretator(show, cb)) // И снова запускаем интерпретатор
+                }
             )
     }
 }
@@ -75,12 +92,14 @@ export function cbWrapperWithCancelAllListeners(removeListeners) {
 export function createNewChannel(listener) {
     return function (condition, result) { // Принимает условие и результат разрешения промиса
         return new Promise(
-            resolve =>
-                listener('keydown',
-                    function (event) {
-                        condition(event) && resolve(result)
+            function (resolve) {
+                return listener(
+                    'keydown', // Будем слушать клавиши
+                    function (event) { // Передаем в Handler событие
+                        condition(event) && resolve(result) // При выполнении условия событием резолвим результат
                     }
-                ).setListener()
+                ).setListener() // Ставим лисенер
+            }
         )
     }
 }

@@ -2,7 +2,7 @@ import { isPressKeyA, isPressKeyS, isPressKeyD } from "../managers/event.js";
 import listener from "../managers/listener.js";
 import { eventInterpretator } from "./utils.js"
 
-const variants =
+const variants = // Соответствие принятых купюр их значению
     (is10, is20, is50) =>
     ({
         '10': is10,
@@ -13,7 +13,7 @@ const variants =
 function handler(interpretator) {
     return function (cb) {
         return function (event) {
-            return interpretator(event, cb)
+            return interpretator(event, cb) // Интерпретируем событие и передаем в cb
         }
     }
 }
@@ -21,7 +21,7 @@ function handler(interpretator) {
 function cashinEmulator(listener, handler) {
     return function (cb) {
 
-        const { setListener, removeListener } =
+        const { setListener, removeListener } = // Получаем ручки, чтобы передать в методы ниже
             listener("keydown",
                 handler(cb)
             )
