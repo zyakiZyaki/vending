@@ -6,26 +6,26 @@ import bankingEmulator from '../../emulators/bankingEmulator.js'
 //Если оплата прошла, меняем статус заказа на оплаченный и переадресуем на страницу вендинга
 //В противном случае перезагружаем страницу
 
-function isPaid(changeOrderStatus, redirect, reload) {
+function isPaid(completed, redirect, reload) {
     return function (bool) {
-        return bool
-            ?
-            (
-                changeOrderStatus(),
+        bool
+            ? (
+                completed(),
                 redirect()
             )
-            :
-            (
-                reload()
-            )
+            : reload()
     }
 }
 
 
-//Запускаем эмулятор
+function banking({ BankCardPurchase, BankCardCancel }) {
 
-bankingEmulator
-    .BankCardPurchase(
+    BankCardPurchase(BankCardCancel) // Инициируем процесс приема оплаты и передаем метод отмены колбэком
+
+}
+
+banking(
+    bankingEmulator(
         getProductPrice(),
         isPaid(
             setPaidStatusTrue,
@@ -34,3 +34,4 @@ bankingEmulator
         ),
         pinpadMessage
     )
+)

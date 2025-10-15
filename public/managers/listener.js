@@ -1,27 +1,32 @@
 // Функция для Лисенера
 
+const controller = new AbortController()
+
 function listener(
     setListener,
     removeListener,
     controller
 ) {
-    return function (event, cb) {
-        return {
-            setListener: function () {
-                return console.log(event), setListener(event, cb, { signal: controller.signal })
-            },
-            removeListener: function () {
-                return removeListener(event, cb, { signal: controller.signal })
-            },
-            cancelAll: function () {
-                controller.abort()
+    return function (eventType) {
+        return function (cb) {
+            return {
+                setListener: function () {
+                    return console.log(eventType), setListener(eventType, cb, { signal: controller.signal })
+                },
+                removeListener: function () {
+                    return removeListener(eventType, cb, { signal: controller.signal })
+                }
             }
-        };
-    };
+        }
+    }
 }
 
 export default listener(
     document.addEventListener,
     document.removeEventListener,
-    new AbortController()
-);
+    controller
+)
+
+export function abortListeners() {
+    controller.abort()
+}

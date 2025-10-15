@@ -4,8 +4,8 @@ function data(data) {
     function getProductData(idx) {
             return Object
                 .values(data)
-                .flatMap(category => Object.values(category.products || {}))
-                .find(product => product.idx === +idx);
+                .flatMap(({ products }) => Object.values(products || {}))
+                .find(product => product.idx === Number(idx));
         }
     return {
         getProductData,

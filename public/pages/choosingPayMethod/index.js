@@ -2,20 +2,37 @@ import { isChosenCashPayMethod, isChosenCardPayMethod } from '../../managers/eve
 import listener from '../../managers/listener.js'
 import { redirectTo } from '../../managers/router.js'
 
-//Ставим слушателя на кнопки, переходим на соответствующую страницу при клике
 
-const { setListener, removeListener } =
-    listener('click', function (e) {
-        if (isChosenCashPayMethod(e) || isChosenCardPayMethod(e)) {
-            return removeListener(),
+function choosingPayMethod(listener, handler) {
+    const { setListener, removeListener } =
+        listener(
+            handler(
+                function () {
+                    removeListener()
+                }
+            )
+        )
+    setListener()
+}
+
+function handler(isCash, isCard, redirectTo) {
+    return function (stop) {
+        return function (e) {
+            if (isCash(e) || isCard(e)) {
+                stop()
                 redirectTo(
-                    isChosenCashPayMethod(e)
-                        ?
-                        'cashing'
-                        :
-                        'banking'
+                    isCash(e) ? 'cashing' : 'banking'
                 )
+            }
         }
-    })
+    }
+}
 
-setListener()
+choosingPayMethod(
+    listener("click"),
+    handler(
+        isChosenCashPayMethod,
+        isChosenCardPayMethod,
+        redirectTo
+    )
+)

@@ -19,19 +19,19 @@ function handler(isSuccess, isFail) {
     }
 }
 
-function vendingEmulator(showMessage, messages, handler, getProduct) {
+function vendingEmulator(listener, showMessages, messages, handler, getProduct) {
 
     return {
         Vend: function (product_idx, cb, display_cb) {
             const { setListener, removeListener } =
-                listener("keydown",
+                listener(
                     handler(
                         complited(
                             () => removeListener(),
                             showMessages(display_cb),
                             cb
                         ),
-                        showMessage(display_cb),
+                        showMessages(display_cb),
                         messages(
                             getProduct(product_idx)
                         )
@@ -43,7 +43,8 @@ function vendingEmulator(showMessage, messages, handler, getProduct) {
 }
 
 export default vendingEmulator(
-    showMessage,
+    listener("keydown"),
+    showMessages,
     messages,
     handler(
         isPressKeyA,

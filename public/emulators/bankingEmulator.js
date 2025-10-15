@@ -1,4 +1,5 @@
 import listener from "../managers/listener.js";
+import { abortListeners } from "../managers/listener.js";
 import { isPressKeyA, isPressKeyD, isPressKeyC } from "../managers/event.js";
 import { showMessages, stageResultInterpretator, cbWrapperWithCancelAllListeners, createNewChannel } from "./utils.js";
 
@@ -15,44 +16,37 @@ const messages =
 
 // Фабричная функция с прослушиваемыми каналами(кнопками) и методом их инициации
 function bankCardPurchaseFactory(createNewChannel, isCancel, isFail, isSuccess) {
-    return function ({ init, process, fail, success, cancel }, resultInterpretator) {
+    return function ({ init, process, fail, success, cancel }, interpretator) {
         return {
             start: function (next) {
                 return next({
-                    raceChannels: function (...listenedChannels) { // Получаем каналы
-                        return resultInterpretator(
+                    initListening: function (...listenedChannels) { // Получаем каналы
+                        interpretator(
                             // Запускаем интерпретатор объекта с результатами
-                            // Объект содержит побочный эффект(сообщение) и
-                            // результат для логического продолжения(возврата): промис(ы) или cb(boolean)
+                            // Объект содержит сообщение(msg) и
+                            // результат для логического продолжения:
+                            // channels(массив промисов) или result(boolean)
                             {
                                 msg: init,
-                                result: listenedChannels
+                                channels: listenedChannels
                             }
                         )
                     },
-                    listenCancelCannel:
+                    failCannel:
                         createNewChannel(
-                            isCancel,
-                            {
-                                msg: cancel,
-                                result: false
-                            }
-                        ),
-                    listenFailCannel:
-                        createNewChannel(
-                            isFail,
+                            isFail, // Условие возврата объекта ниже интерпретатором
                             {
                                 msg: [...process, fail],
                                 result: false
                             }
                         ),
-                    listenSuccesCannel: function (cancelChannel) {
+                    successCannel: function (cancel) {
                         return createNewChannel(
                             isSuccess,
                             {
                                 msg: process,
-                                result: [
-                                    cancelChannel,
+                                channels: [
+                                    cancel,
                                     {
                                         msg: success,
                                         result: true
@@ -62,52 +56,60 @@ function bankCardPurchaseFactory(createNewChannel, isCancel, isFail, isSuccess) 
                         )
                     }
                 })
-            }
+            },
+            cancel:
+                createNewChannel(
+                    isCancel,
+                    {
+                        msg: cancel,
+                        result: false
+                    }
+                )
+
         }
     }
 }
 
 function bankEmulator(bankCardPurchaseFactory, result, displayWrapper, messages, cbWrapper) {
-    return {
-        BankCardPurchase: function (amount, cb, display_cb) {
-            return bankCardPurchaseFactory(
+
+    return function (amount, cb, display_cb) {
+
+        const { start, cancel } = // Получаем ручки включения и отмены
+
+            bankCardPurchaseFactory(
                 messages(amount),
                 result(
                     displayWrapper(display_cb), // Оборачиваем display_cb в функцию промис, показывающую сообщение через 1 сек
                     cbWrapper(cb) // Оборачиваем cb в функцию, удалющую все висящие лисенеры.
-                    // То есть, когда возвращаем cb, действие завершено и больше бессмысленно слушать
                 )
             )
-                .start( // Стартуем, чтобы получить все методы фактори-функции
-                    ({ raceChannels, listenCancelCannel, listenSuccesCannel, listenFailCannel }) =>
-                        raceChannels( // Начинаем прослушивание трех кнопок
-                            listenCancelCannel,
-                            listenFailCannel,
-                            listenSuccesCannel(
-                                listenCancelCannel //Передаем канал отмены колбэком,
-                                // чтобы иметь возможность отменить уже запущенный успешный сценарий
+
+        return {
+
+            BankCardPurchase: function (cancelCannel) {
+                return start( // Стартуем, чтобы получить все методы фактори-функции
+                    ({ initListening, successCannel, failCannel }) =>
+                        initListening( // Начинаем прослушивание кнопок
+                            cancelCannel, // Добавляем кнопку отмены из колбэка
+                            failCannel,
+                            successCannel(
+                                cancelCannel
                             )
                         )
                 )
-        },
-        // Метод нигде в коде не используется,
-        // но при вызове удаленит все лисенеры, вызовет cb(false)
-        // и выведет сообщение об отмене
-        BankCardCancel: function () {
-            return result(
-                displayWrapper(display_cb),
-                cbWrapper(cb)
-            )({
-                msg: cancel,
-                result: false
-            })
+            },
+            
+            BankCardCancel: cancel
+
         }
     }
 }
 
 export default bankEmulator(
     bankCardPurchaseFactory(
-        createNewChannel(listener),
+        createNewChannel(
+            listener("keydown")
+        ),
         isPressKeyC,
         isPressKeyD,
         isPressKeyA
@@ -116,6 +118,6 @@ export default bankEmulator(
     showMessages,
     messages,
     cbWrapperWithCancelAllListeners(
-        listener().cancelAll // Здесь используем AbortController для удаления всех слушателей
+        abortListeners // Здесь используем AbortController для удаления всех слушателей
     )
 )

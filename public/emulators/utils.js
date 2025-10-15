@@ -62,17 +62,19 @@ export function eventInterpretator(variants) {
 
 // Функция интерпретирующая результат этапа банковской опалты
 export function stageResultInterpretator(show, cb) {
-    return function ({ msg, result }) {
-        return show(msg)
+    return function ({ msg, result, channels }) {
+        show(msg) // Дожидаемся показа сообщения
             .then(
                 function () {
-                    return typeof result === 'boolean' // Если подается булево значение
+                    channels // Если подаем каналы
                         ?
-                        cb(result) // Вызываем колбэк и завершаем процесс
-                        :
                         Promise
-                            .race(result) // В противном случае ожидаем победителя в гонке промисов
-                            .then(stageResultInterpretator(show, cb)) // И снова запускаем интерпретатор
+                            .race(channels) // То ожидаем победителя в гонке промисов
+                            .then(
+                                stageResultInterpretator(show, cb)  // И снова запускаем интерпретатор
+                            )
+                        :
+                        cb(result) // В противном случае вызываем колбэк и завершаем процесс
                 }
             )
     }
@@ -93,8 +95,7 @@ export function createNewChannel(listener) {
     return function (condition, result) { // Принимает условие и результат разрешения промиса
         return new Promise(
             function (resolve) {
-                return listener(
-                    'keydown', // Будем слушать клавиши
+                listener(
                     function (event) { // Передаем в Handler событие
                         condition(event) && resolve(result) // При выполнении условия событием резолвим результат
                     }

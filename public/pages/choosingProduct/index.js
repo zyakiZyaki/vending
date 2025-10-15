@@ -1,13 +1,14 @@
 import listener from "../../managers/listener.js";
 import { getIdxChosenProduct, getChosenCategory, isChosenNewCategory, isChosenProduct } from '../../managers/event.js'
-import { renderMenu, reRenderMenu } from '../../managers/html.js'
+import { reRenderMenu } from '../../managers/html.js'
 import { redirectTo } from '../../managers/router.js'
 import { getProductData } from '../../managers/data.js'
 import { createNewOrder } from '../../managers/order.js'
 
 const { setListener, removeListener } =
-    listener("click",
-        handler(
+    listener("click")
+        (
+            handler(
             () => removeListener(), // Колбэк для удаления слушателя
             isChosenNewCategory,
             reRenderMenu,
@@ -21,7 +22,7 @@ const { setListener, removeListener } =
 
 
 // Если выбирают новую категорию, получаем ее по клику и перерендерим с учетом этого
-function handler(cb, isChosenNewCategory, reRenderMenu, getChosenCategory, isChosenProduct, getProductData, getIdxChosenProduct, redirect) {
+function handler(removeListener, isChosenNewCategory, reRenderMenu, getChosenCategory, isChosenProduct, getProductData, getChosenProduct, redirect) {
     return function (e) {
         if (isChosenNewCategory(e)) {
             return reRenderMenu(
@@ -32,16 +33,16 @@ function handler(cb, isChosenNewCategory, reRenderMenu, getChosenCategory, isCho
         if (isChosenProduct(e)) {
             return createNewOrder(
                 getProductData(
-                    getIdxChosenProduct(e) // По клику получаем выбранный напиток
+                    getChosenProduct(e) // По клику получаем выбранный напиток
                 )
             ),
-                cb(),
+                removeListener(),
                 redirect();
 
         }
     }
 }
 
-//Рендерим категории и устанавливаем лисенер
+//Устанавливаем лисенер
 
-renderMenu(), setListener()
+setListener()

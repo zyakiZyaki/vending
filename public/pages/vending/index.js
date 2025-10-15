@@ -26,7 +26,7 @@ if (isPaidStatusTrue()) {
             isVendingCompleted(
                 orderCompleted,
                 () => redirectTo('choosingProduct'),
-                () => location.reload()
+                () => location.reload
             ),
             vendingMessage
         )

@@ -22,7 +22,7 @@ function cashinEmulator(listener, handler) {
     return function (cb) {
 
         const { setListener, removeListener } = // Получаем ручки, чтобы передать в методы ниже
-            listener("keydown",
+            listener(
                 handler(cb)
             )
 
@@ -38,7 +38,7 @@ function cashinEmulator(listener, handler) {
 }
 
 export default cashinEmulator(
-    listener,
+    listener("keydown"),
     handler(
         eventInterpretator(
             variants(
