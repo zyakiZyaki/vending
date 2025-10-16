@@ -1,9 +1,9 @@
-import listener from "../../managers/listener.js";
 import { getIdxChosenProduct, getChosenCategory, isChosenNewCategory, isChosenProduct } from '../../managers/event.js'
 import { reRenderMenu } from '../../managers/html.js'
 import { redirectTo } from '../../managers/router.js'
 import { getProductData } from '../../managers/data.js'
 import { createNewOrder } from '../../managers/order.js'
+import { listen } from "../handlers.js";
 
 function handler(isNewMenuItem, reRender, newItem, isProduct, getData, product, createOrder, redirect) {
     return function (stop) {
@@ -28,22 +28,9 @@ function handler(isNewMenuItem, reRender, newItem, isProduct, getData, product, 
     }
 }
 
-function choosingProduct(listener, handler) {
 
-    const { setListener, removeListener } =
-        listener(
-            handler(
-                function () {
-                    removeListener()
-                }
-            )
-        )
-
-    setListener()
-}
-
-choosingProduct(
-    listener('click'),
+listen(
+    "click",
     handler(
         isChosenNewCategory,
         reRenderMenu,

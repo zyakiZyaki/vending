@@ -1,40 +1,24 @@
 import { isChosenCashPayMethod, isChosenCardPayMethod } from '../../managers/event.js'
-import listener from '../../managers/listener.js'
 import { redirectTo } from '../../managers/router.js'
+import { listen } from '../handlers.js'
+import { choosePayEventInterpretator, choosePayHandler } from './utils.js'
 
+const variants =
+    (isCash, isCard) =>
+        ({
+            'cashing': isCash,
+            'banking': isCard
+        })
 
-function choosingPayMethod(listener, handler) {
-
-    const { setListener, removeListener } =
-        listener(
-            handler(
-                function () {
-                    removeListener()
-                }
-            )
+listen(
+    "click",
+    choosePayHandler(
+        choosePayEventInterpretator(
+            variants(
+                isChosenCashPayMethod,
+                isChosenCardPayMethod
+            ),
+            redirectTo
         )
-
-    setListener()
-}
-
-function handler(isCash, isCard, redirectTo) {
-    return function (stop) {
-        return function (e) {
-            if (isCash(e) || isCard(e)) {
-                stop()
-                redirectTo(
-                    isCash(e) ? 'cashing' : 'banking'
-                )
-            }
-        }
-    }
-}
-
-choosingPayMethod(
-    listener("click"),
-    handler(
-        isChosenCashPayMethod,
-        isChosenCardPayMethod,
-        redirectTo
     )
 )
