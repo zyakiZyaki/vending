@@ -5,12 +5,12 @@
 function createOrderStorage(read, write) {
     return {
         get: function () {
-            return JSON.parse(
+            JSON.parse(
                 read()
             )
         },
         set: function (order) {
-            return write(
+            write(
                 JSON.stringify(order)
             )
         }
@@ -31,7 +31,9 @@ function orderMethods({ get, set }) {
             )
         },
         isPaidStatusTrue: function () {
-            return get().isPaid
+            return Boolean(
+                get().isPaid
+            )
         },
         setPaidStatusTrue: function () {
             return set({
@@ -80,7 +82,11 @@ export const {
     orderCompleted
 } = orderMethods(
     createOrderStorage(
-        () => localStorage.getItem("newOrder"),
-        (order) => localStorage.setItem("newOrder", order)
+        function () {
+            localStorage.getItem("newOrder")
+        },
+        function (order) {
+            localStorage.setItem("newOrder", order)
+        }
     )
 )

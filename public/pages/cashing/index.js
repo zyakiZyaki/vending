@@ -9,13 +9,25 @@ function processPayment(getAmount, cont, price, finish) {
     return function (cash) {
         return (
             function (amount) {
-                amount < price // Условие работы эмулятора
-                    ?
-                    cont(amount)
-                    :
-                    finish(amount - price)
+                // Условие работы эмулятора
+                amount < price ? cont(amount) : finish(amount - price)
             }
-        )(getAmount(cash)) // После ввода cash, вызываем ф-цию и получаем amount
+        )(getAmount(cash)) // После получения cash, вызываем ф-цию и получаем amount
+    }
+}
+
+// Завершение оплаты
+
+function finishPayProccess(display, complitedStatus, stop, redirect) {
+    return function (change) {
+        display(change)
+        complitedStatus()
+        stop()
+        setTimeout(
+            function () {
+                redirect()
+            }, 2000
+        )
     }
 }
 
@@ -23,17 +35,18 @@ const { StartCashin, StopCashin } = // Получаем методы
     cashinEmulator(
         processPayment(
             getNewAmount,
-            reRenderAmountBlock, // cont
-            getProductPrice(), // price
-            function (change) { // finish
-                renderBlockWithChange(change),
-                    setPaidStatusTrue(),
-                    StopCashin(),
-                    setTimeout(
-                        () => redirectTo('vending'),
-                        2000
-                    )
-            }
+            reRenderAmountBlock,
+            getProductPrice(),
+            finishPayProccess(
+                renderBlockWithChange,
+                setPaidStatusTrue,
+                function() {
+                    StopCashin()
+                },
+                function() {
+                    redirectTo('vending')
+                }
+            )
         )
     )
 

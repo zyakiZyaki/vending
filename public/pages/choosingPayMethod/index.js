@@ -4,6 +4,7 @@ import { redirectTo } from '../../managers/router.js'
 
 
 function choosingPayMethod(listener, handler) {
+
     const { setListener, removeListener } =
         listener(
             handler(
@@ -12,6 +13,7 @@ function choosingPayMethod(listener, handler) {
                 }
             )
         )
+
     setListener()
 }
 

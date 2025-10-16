@@ -1,24 +1,15 @@
 // Функция для работы с роутами
 
-function router(routes, location) {
+function router(location) {
     return {
         redirectTo: function (str) {
             return location
                 .assign(
-                    routes[str]
+                    '../../pages/' + str
+                    // Явно добавляем путь к файлам
                 )
         }
     }
 }
 
-// Объект с роутами
-
-const routes = {
-    choosingProduct: '../../pages/choosingProduct/',
-    choosingPayMethod: '../../pages/choosingPayMethod/',
-    vending: '../../pages/vending/',
-    cashing: '../../pages/cashing/',
-    banking: '../../pages/banking/'
-}
-
-export const { redirectTo } = router(routes, window.location);
+export const { redirectTo } = router(window.location)

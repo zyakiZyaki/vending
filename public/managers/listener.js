@@ -11,7 +11,7 @@ function listener(
         return function (cb) {
             return {
                 setListener: function () {
-                    return console.log(eventType), setListener(eventType, cb, { signal: controller.signal })
+                    return setListener(eventType, cb, { signal: controller.signal })
                 },
                 removeListener: function () {
                     return removeListener(eventType, cb, { signal: controller.signal })

@@ -5,44 +5,55 @@ import { redirectTo } from '../../managers/router.js'
 import { getProductData } from '../../managers/data.js'
 import { createNewOrder } from '../../managers/order.js'
 
-const { setListener, removeListener } =
-    listener("click")
-        (
-            handler(
-            () => removeListener(), // Колбэк для удаления слушателя
-            isChosenNewCategory,
-            reRenderMenu,
-            getChosenCategory,
-            isChosenProduct,
-            getProductData,
-            getIdxChosenProduct,
-            () => redirectTo('choosingPayMethod')
-        )
-    )
-
-
-// Если выбирают новую категорию, получаем ее по клику и перерендерим с учетом этого
-function handler(removeListener, isChosenNewCategory, reRenderMenu, getChosenCategory, isChosenProduct, getProductData, getChosenProduct, redirect) {
-    return function (e) {
-        if (isChosenNewCategory(e)) {
-            return reRenderMenu(
-                getChosenCategory(e)
-            )
-        }
-        // Если выбирают напиток - создаем новый заказ.
-        if (isChosenProduct(e)) {
-            return createNewOrder(
-                getProductData(
-                    getChosenProduct(e) // По клику получаем выбранный напиток
+function handler(isNewMenuItem, reRender, newItem, isProduct, getData, product, createOrder, redirect) {
+    return function (stop) {
+        return function (e) {
+            // Если выбирают новый пункт меню - обновляем.
+            if (isNewMenuItem(e)) {
+                reRender(
+                    newItem(e)
                 )
-            ),
-                removeListener(),
-                redirect();
-
+            }
+            // Если выбирают продукт - создаем заказ.
+            if (isProduct(e)) {
+                createOrder(
+                    getData(
+                        product(e) // Получаем выбранный напиток
+                    )
+                )
+                stop() // Перестаем слушать
+                redirect()
+            }
         }
     }
 }
 
-//Устанавливаем лисенер
+function choosingProduct(listener, handler) {
 
-setListener()
+    const { setListener, removeListener } =
+        listener(
+            handler(
+                function () {
+                    removeListener()
+                }
+            )
+        )
+
+    setListener()
+}
+
+choosingProduct(
+    listener('click'),
+    handler(
+        isChosenNewCategory,
+        reRenderMenu,
+        getChosenCategory,
+        isChosenProduct,
+        getProductData,
+        getIdxChosenProduct,
+        createNewOrder,
+        function () {
+            redirectTo('choosingPayMethod')
+        }
+    )
+)

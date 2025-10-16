@@ -21,23 +21,27 @@ function handler(isSuccess, isFail) {
 
 function vendingEmulator(listener, showMessages, messages, handler, getProduct) {
 
-    return {
-        Vend: function (product_idx, cb, display_cb) {
-            const { setListener, removeListener } =
-                listener(
-                    handler(
-                        complited(
-                            () => removeListener(),
-                            showMessages(display_cb),
-                            cb
-                        ),
+    return function (product_idx, cb, display_cb) {
+
+        const { setListener, removeListener } =
+            listener(
+                handler(
+                    complited(
+                        () => removeListener(),
                         showMessages(display_cb),
-                        messages(
-                            getProduct(product_idx)
-                        )
+                        cb
+                    ),
+                    showMessages(display_cb),
+                    messages(
+                        getProduct(product_idx)
                     )
                 )
-            return setListener()
+            )
+            
+        return {
+            Vend: function () {
+                return setListener()
+            }
         }
     }
 }
