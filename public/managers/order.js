@@ -5,7 +5,7 @@
 function createOrderStorage(read, write) {
     return {
         get: function () {
-            JSON.parse(
+            return JSON.parse(
                 read()
             )
         },
