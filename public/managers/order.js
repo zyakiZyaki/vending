@@ -83,7 +83,7 @@ export const {
 } = orderMethods(
     createOrderStorage(
         function () {
-            localStorage.getItem("newOrder")
+            return localStorage.getItem("newOrder")
         },
         function (order) {
             localStorage.setItem("newOrder", order)
